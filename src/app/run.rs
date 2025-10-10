@@ -1,6 +1,6 @@
 use crate::app::config;
 use crate::infra::app_data;
-use std::process::Command;
+use exec;
 
 pub enum RunError {
     AppNotFound(String),
@@ -18,18 +18,9 @@ pub fn run(app_name: &str, config: &config::Config) -> Result<(), RunError> {
         })?
         .ok_or_else(|| RunError::AppNotFound(app_name.to_string()))?;
 
-    let output = Command::new("/usr/bin/chromium")
+    let error = exec::Command::new("/usr/bin/chromium")
         .arg(format!("--app={}", app.url))
-        .output()
-        .map_err(RunError::Io)?;
+        .exec();
 
-    if output.status.success() {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        println!("Output:\n{}", stdout);
-    } else {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        eprintln!("Error:\n{}", stderr);
-    }
-
-    Ok(())
+    return Err(RunError::LaunchFailed(error.to_string()));
 }
