@@ -15,7 +15,7 @@ tarantula run <name>
 Add a web app:
 
 ```bash
-tarantula install [url] [name]
+tarantula install <name> <url>
 ```
 
 Remove a web app:

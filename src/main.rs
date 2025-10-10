@@ -1,3 +1,8 @@
+use tarantula::cli::run;
+
 fn main() {
-    println!("Hello, world!");
+    if let Err(e) = run::run() {
+        eprint!("Error: {}", e);
+        std::process::exit(1);
+    }
 }
