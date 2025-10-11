@@ -11,21 +11,17 @@ use clap::{Args, Parser, Subcommand};
 #[command(name = "tarantula", version, about = "Use web apps like desktop apps")]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
+
+    run_cmd: Vec<String>,
 }
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    Run(RunArgs),
     Install(InstallArgs),
     Uninstall(UpdateArgs),
     List,
     Update(UpdateArgs),
-}
-
-#[derive(Debug, Args)]
-struct RunArgs {
-    name: String,
 }
 
 #[derive(Debug, Args)]
@@ -62,46 +58,36 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let config = crate::app::config::Config::new(app_data_path, desktop_data_path);
 
     match &cli.command {
-        Commands::Run(args) => match run::run(args.name.as_str(), &config) {
-            Ok(_) => println!("App launched!"),
-            Err(run::RunError::AppNotFound(name)) => {
-                eprint!("App not found: {}", name);
-            }
-            Err(run::RunError::LaunchFailed(reason)) => {
-                eprint!("Failed to launch app: {}", reason);
-            }
-            Err(run::RunError::Io(e)) => {
-                eprint!("Error launching app: {}", e);
-            }
-        },
-        Commands::Install(args) => {
+        Some(Commands::Install(args)) => {
             match install::install(args.name.as_str(), args.url.as_str(), &config) {
                 Ok(_) => println!("Web app installed!"),
-                Err(install::InstallError::Io(e)) => {
-                    eprint!("Error installing app: {}", e);
+                Err(install::InstallError::InvalidData(e)) => {
+                    eprint!("{}\n", e);
                 }
                 Err(e) => {
-                    eprint!("Error installing app: {:?}", e);
+                    eprint!("There was a problem installing the app: {:?}", e);
                 }
             }
         }
-        Commands::Uninstall(args) => match uninstall::uninstall(args.name.as_str(), &config) {
-            Ok(_) => println!("Web app uninstalled!"),
-            Err(uninstall::UninstallError::AppNotFound) => {
-                eprint!("App not found: {}", args.name);
+        Some(Commands::Uninstall(args)) => {
+            match uninstall::uninstall(args.name.as_str(), &config) {
+                Ok(_) => println!("Web app uninstalled!"),
+                Err(uninstall::UninstallError::AppNotFound) => {
+                    eprint!("App not found: {}", args.name);
+                }
+                Err(uninstall::UninstallError::Io(e)) => {
+                    eprint!("Error uninstalling app: {}", e);
+                }
             }
-            Err(uninstall::UninstallError::Io(e)) => {
-                eprint!("Error uninstalling app: {}", e);
-            }
-        },
-        Commands::List => {
+        }
+        Some(Commands::List) => {
             let apps = app_data::get_apps(&config).unwrap_or_else(|_| vec![]);
             println!("Installed web apps:");
             for app in apps {
                 println!("{} - {}", app.name, app.url);
             }
         }
-        Commands::Update(args) => {
+        Some(Commands::Update(args)) => {
             let options = update::UpdateOptions {
                 name: args.new_url.clone(),
                 new_name: args.new_name.clone(),
@@ -116,6 +102,26 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             println!("Update");
+        }
+        None => {
+            if cli.run_cmd.is_empty() {
+                eprintln!("No command provided. Use --help for more information.");
+                return Ok(());
+            }
+
+            let name = &cli.run_cmd[0];
+            match run::run(name.as_str(), &config) {
+                Ok(_) => println!("App launched!"),
+                Err(run::RunError::AppNotFound(name)) => {
+                    eprint!("App not found: {}", name);
+                }
+                Err(run::RunError::LaunchFailed(reason)) => {
+                    eprint!("Failed to launch app: {}", reason);
+                }
+                Err(run::RunError::Io(e)) => {
+                    eprint!("Error launching app: {}", e);
+                }
+            }
         }
     }
 

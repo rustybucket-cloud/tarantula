@@ -8,9 +8,16 @@ pub enum InstallError {
     Io(std::io::Error),
     Desktop(desktop_data::DesktopDataError),
     AppData(app_data::ProjectDataError),
+    InvalidData(String),
 }
 
 pub fn install(name: &str, url: &str, config: &Config) -> Result<(), InstallError> {
+    if ["install", "uninstall", "update", "list"].contains(&name.to_lowercase().as_str()) {
+        return Err(InstallError::InvalidData(
+            "App name cannot be a reserved word (install, uninstall, update, list)".to_string(),
+        ));
+    }
+
     let app = App {
         name: name.to_string(),
         url: url.to_string(),

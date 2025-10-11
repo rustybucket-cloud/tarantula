@@ -9,7 +9,7 @@ Tarantula requires a Chromium-based browser (Chrome, Edge, Brave, Arc, Vivaldi) 
 Run a web app:
 
 ```bash
-tarantula run <name>
+tarantula <name>
 ```
 
 Add a web app:
