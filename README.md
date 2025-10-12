@@ -34,6 +34,12 @@ cp target/release/tarantula /usr/local/bin/
 
 ## Usage
 
+Open tarantula UI (Coming Soon):
+
+```bash
+tarantula
+```
+
 Run a web app:
 
 ```bash
