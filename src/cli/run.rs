@@ -1,5 +1,6 @@
 use dirs;
 
+use crate::app::config;
 use crate::app::install;
 use crate::app::run;
 use crate::app::uninstall;
@@ -57,12 +58,16 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
-    let app_data_path = home_dir
-        .join(".local/share/tarantula")
-        .to_path_buf();
+    let app_data_path = home_dir.join(".local/share/tarantula").to_path_buf();
     let desktop_data_path = home_dir.join(".local/share/applications").to_path_buf();
-    let mut config = crate::app::config::Config::new(app_data_path, desktop_data_path);
-    config.browser_path = app_data::get_browser_path(&config);
+    let mut config = config::Config::new(app_data_path, desktop_data_path);
+    config.browser_path = match config::get_browser_path(&config) {
+        Ok(path) => path,
+        Err(e) => {
+            eprintln!("Error retrieving browser path from config: {:?}", e);
+            std::process::exit(1);
+        }
+    };
     println!("Config: {:?}", config);
 
     match &cli.command {

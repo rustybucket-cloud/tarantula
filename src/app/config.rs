@@ -1,9 +1,10 @@
 use std::path::PathBuf;
 
-use crate::infra::app_data;
-use crate::infra::app_data::ProjectDataError;
+use crate::infra::config_data;
+use crate::infra::config_data::ConfigDataError;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub app_data_path: PathBuf,
     pub desktop_data_path: PathBuf,
@@ -39,10 +40,16 @@ pub fn update_browser_path(
         ));
     }
 
-    app_data::set_browser_path(new_path, config).map_err(|e| match e {
-        ProjectDataError::Io(io_err) => ConfigError::Io(io_err),
-        ProjectDataError::JSON(json_err) => ConfigError::JSON(json_err),
+    config_data::update_browser_path(new_path, config).map_err(|e| match e {
+        ConfigDataError::Io(e) => ConfigError::Io(e),
     })?;
 
     Ok(())
+}
+
+pub fn get_browser_path(
+    config: &crate::app::config::Config,
+) -> Result<Option<String>, ConfigError> {
+    let path = config_data::get_browser_path(config).map_err(|e| ConfigError::Io(e))?;
+    Ok(path)
 }
