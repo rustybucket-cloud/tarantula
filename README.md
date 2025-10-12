@@ -2,7 +2,7 @@
 
 Tarantula lets you run web apps like desktop applications. It was inspired by the web app experience on [Omarchy](https://github.com/basecamp/omarchy).
 
-Open the web apps from your application launcher and from the command line.
+Open web apps from your application launcher and from the command line.
 
 A Chromium-based browser is required (Chrome, Edge, Brave, Arc, Vivaldi) to be installed on your system.
 
