@@ -21,6 +21,10 @@ cargo build --release
 cp target/release/tarantula /usr/local/bin/
 ```
 
+### AUR
+
+(Coming soon)
+
 ## CLI Usage
 
 Run a web app:
