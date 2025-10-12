@@ -69,3 +69,13 @@ Update a web app:
 ```bash
 tarantula update <name>
 ```
+
+### Selecting a browser
+
+By default Tarantula will use your system's default browser.
+
+To configure Tarantula to use a different browser, run the following command:
+
+```bash
+tarantula config -b <path to browser executable>
+```
