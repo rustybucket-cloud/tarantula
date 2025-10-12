@@ -22,6 +22,7 @@ enum Commands {
     Uninstall(UpdateArgs),
     List,
     Update(UpdateArgs),
+    Config(ConfigArgs),
 }
 
 #[derive(Debug, Args)]
@@ -46,16 +47,23 @@ struct UpdateArgs {
     new_url: Option<String>,
 }
 
+#[derive(Debug, Args)]
+struct ConfigArgs {
+    #[arg(short = 'b', long = "browser")]
+    browser_path: Option<String>,
+}
+
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
     let app_data_path = home_dir
         .join(".local/share/tarantula")
-        .join("apps.json")
         .to_path_buf();
     let desktop_data_path = home_dir.join(".local/share/applications").to_path_buf();
-    let config = crate::app::config::Config::new(app_data_path, desktop_data_path);
+    let mut config = crate::app::config::Config::new(app_data_path, desktop_data_path);
+    config.browser_path = app_data::get_browser_path(&config);
+    println!("Config: {:?}", config);
 
     match &cli.command {
         Some(Commands::Install(args)) => {
@@ -102,6 +110,25 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             println!("Update");
+        }
+        Some(Commands::Config(args)) => {
+            if let Some(val) = &args.browser_path {
+                if val.trim().is_empty() {
+                    eprintln!("Browser path cannot be empty.");
+                    return Ok(());
+                }
+
+                match crate::app::config::update_browser_path(val, &mut config) {
+                    Ok(_) => println!("Browser path updated!"),
+                    Err(crate::app::config::ConfigError::InvalidPath(msg)) => {
+                        eprint!("Invalid path: {}", msg);
+                    }
+                    Err(e) => {
+                        eprint!("Error updating browser path: {:?}", e);
+                    }
+                }
+                return Ok(());
+            }
         }
         None => {
             if cli.run_cmd.is_empty() {

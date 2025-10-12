@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::app::config;
 use crate::infra::app_data;
 use exec;
@@ -18,9 +20,88 @@ pub fn run(app_name: &str, config: &config::Config) -> Result<(), RunError> {
         })?
         .ok_or_else(|| RunError::AppNotFound(app_name.to_string()))?;
 
-    let error = exec::Command::new("/usr/bin/chromium")
+    let browser_path = match &config.browser_path {
+        Some(path) => path.clone(),
+        None => match get_browser_path() {
+            Some(path) => path,
+            None => {
+                return Err(RunError::LaunchFailed(
+                    "Could not determine default browser".to_string(),
+                ));
+            }
+        },
+    };
+
+    let error = exec::Command::new(browser_path)
         .arg(format!("--app={}", app.url))
         .exec();
 
     return Err(RunError::LaunchFailed(error.to_string()));
+}
+
+fn get_browser_path() -> Option<String> {
+    let default_browser = match std::process::Command::new("xdg-settings")
+        .arg("get")
+        .arg("default-web-browser")
+        .output()
+        .ok()
+    {
+        Some(output) => String::from_utf8_lossy(&output.stdout).trim().to_string(),
+        None => return None,
+    };
+
+    if Path::new("/usr/share/applications/")
+        .join(&default_browser)
+        .exists()
+    {
+        let exec_path =
+            get_exec_from_desktop(&Path::new("/usr/share/applications/").join(&default_browser));
+        if exec_path.is_some() {
+            return exec_path;
+        }
+    }
+
+    if Path::new("/etc/xdg/autostart/")
+        .join(&default_browser)
+        .exists()
+    {
+        let exec_path =
+            get_exec_from_desktop(&Path::new("/etc/xdg/autostart/").join(&default_browser));
+        if exec_path.is_some() {
+            return exec_path;
+        }
+    }
+
+    if Path::new("/usr/bin/").join(&default_browser).exists() {
+        return Some("/usr/bin/".to_owned() + &default_browser);
+    }
+
+    if Path::new("/usr/local/bin/").join(&default_browser).exists() {
+        return Some("/usr/local/bin/".to_owned() + &default_browser);
+    }
+
+    if Path::new("/snap/bin/").join(&default_browser).exists() {
+        return Some("/snap/bin/".to_owned() + &default_browser);
+    }
+
+    None
+}
+
+fn get_exec_from_desktop(path: &Path) -> Option<String> {
+    let file_content = std::fs::read_to_string(path).ok()?;
+    for line in file_content.lines() {
+        if line.starts_with("Exec=") {
+            let exec_line = line.trim_start_matches("Exec=").trim();
+            let exec_parts: Vec<&str> = exec_line.split_whitespace().collect();
+            if !exec_parts.is_empty() {
+                let exec_path = exec_parts[0];
+                if exec_path.contains("%") {
+                    return Some(exec_path.split('%').next().unwrap().to_string());
+                } else {
+                    return Some(exec_path.to_string());
+                }
+            }
+        }
+    }
+    None
 }

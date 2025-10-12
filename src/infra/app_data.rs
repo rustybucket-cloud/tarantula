@@ -32,7 +32,8 @@ pub fn get_app(
 }
 
 pub fn get_apps(config: &config::Config) -> Result<Vec<app::App>, ProjectDataError> {
-    let apps = match fs::read_to_string(&config.app_data_path) {
+    let apps_file_path = config.app_data_path.join("apps.json");
+    let apps = match fs::read_to_string(&apps_file_path) {
         Ok(contents) => {
             let apps: Vec<app::App> =
                 serde_json::from_str(&contents).map_err(|e| ProjectDataError::JSON(e))?;
@@ -73,14 +74,28 @@ pub fn remove_app(app_name: &str, config: &config::Config) -> Result<(), Project
 fn write_data_file(apps: &Vec<app::App>, config: &config::Config) -> Result<(), std::io::Error> {
     let apps_json = serde_json::to_string_pretty(&apps)?;
 
-    if let Some(parent) = config.app_data_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
+    fs::create_dir_all(&config.app_data_path)?;
 
-    let mut file = File::create(&config.app_data_path)?;
+    let apps_file_path = config.app_data_path.join("apps.json");
+    let mut file = File::create(&apps_file_path)?;
     file.write_all(apps_json.as_bytes())?;
 
     Ok(())
+}
+
+pub fn set_browser_path(path: &str, config: &config::Config) -> Result<(), ProjectDataError> {
+    let mut new_config = config.clone();
+    new_config.browser_path = Some(path.to_string());
+
+    let apps = get_apps(&new_config)?;
+
+    write_data_file(&apps, &new_config).map_err(|e| ProjectDataError::Io(e))?;
+
+    Ok(())
+}
+
+pub fn get_browser_path(config: &config::Config) -> Option<String> {
+    config.browser_path.clone()
 }
 
 #[cfg(test)]
@@ -101,7 +116,8 @@ mod tests {
         let result = add_app(app, &config);
         assert!(result.is_ok());
 
-        let contents = fs::read_to_string(&config.app_data_path).unwrap();
+        let apps_file_path = config.app_data_path.join("apps.json");
+        let contents = fs::read_to_string(&apps_file_path).unwrap();
         let expected = "[\n  {\n    \"name\": \"Test App\",\n    \"url\": \"https://example.com\",\n    \"icon\": null\n  }\n]";
         assert_eq!(contents, expected);
     }
