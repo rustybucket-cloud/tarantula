@@ -10,6 +10,12 @@ A Chromium-based browser is required (Chrome, Edge, Brave, Arc, Vivaldi) to be i
 
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Run an app](#run-an-app)
+  - [Add an app](#add-an-app)
+  - [Remove an app](#remove-an-app)
+  - [List installed web apps](#list-installed-web-apps)
+  - [Update an app](#update-an-app)
+  - [Selecting a browser](#selecting-a-browser)
 
 ## Installation
 
@@ -40,31 +46,31 @@ Open tarantula UI (Coming Soon):
 tarantula
 ```
 
-Run a web app:
+### Run an app
 
 ```bash
 tarantula <name>
 ```
 
-Add a web app:
+### Add an app
 
 ```bash
 tarantula install <name> <url>
 ```
 
-Remove a web app:
+### Remove an app
 
 ```bash
 tarantula uninstall <name>
 ```
 
-List installed web apps:
+### List installed web apps
 
 ```bash
 tarantula list
 ```
 
-Update a web app:
+### Update an app
 
 ```bash
 tarantula update <name>
