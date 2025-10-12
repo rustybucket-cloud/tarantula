@@ -8,8 +8,8 @@ Tarantula requires a Chromium-based browser (Chrome, Edge, Brave, Arc, Vivaldi) 
 
 ## Table of Contents
 
-- [Installation](##installation)
-- [Usage](##usage)
+- [Installation](#-installation)
+- [Usage](#-usage)
 
 ## Installation
 
