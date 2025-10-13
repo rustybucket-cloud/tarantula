@@ -17,7 +17,19 @@ pub fn update_browser_path(
 }
 
 pub fn get_browser_path(config: &config::Config) -> Result<Option<String>, std::io::Error> {
-    let file = std::fs::File::open(config.app_data_path.join("config.json"))?;
+    let file = match std::fs::File::open(config.app_data_path.join("config.json")) {
+        Ok(f) => f,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            std::fs::create_dir_all(&config.app_data_path)?;
+            let mut file = std::fs::File::create(config.app_data_path.join("config.json"))?;
+            file.write_all(
+                b"{\"app_data_path\":\"\",\"desktop_data_path\":\"\",\"browser_path\":null}",
+            )?;
+
+            std::fs::File::open(config.app_data_path.join("config.json"))?
+        }
+        Err(e) => return Err(e),
+    };
     let reader = std::io::BufReader::new(file);
     let config: config::Config = serde_json::from_reader(reader)?;
     Ok(config.browser_path)
