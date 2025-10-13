@@ -68,7 +68,6 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
             std::process::exit(1);
         }
     };
-    println!("Config: {:?}", config);
 
     match &cli.command {
         Some(Commands::Install(args)) => {
