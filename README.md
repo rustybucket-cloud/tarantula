@@ -60,7 +60,7 @@ tarantula <name>
 You can also provide a URL to run a web app without installing it:
 
 ```bash
-tarantula <url>
+tarantula https://perplexity.ai
 ```
 
 ### Add an app
