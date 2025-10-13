@@ -1,7 +1,8 @@
 use std::path::Path;
 
 use crate::app::config;
-use crate::infra::app_data;
+use crate::infra::app_data::{self, ProjectDataError};
+use crate::utils;
 use exec;
 
 pub enum RunError {
@@ -11,14 +12,26 @@ pub enum RunError {
 }
 
 pub fn run(app_name: &str, config: &config::Config) -> Result<(), RunError> {
-    let app = app_data::get_app(app_name, config)
-        .map_err(|e| {
-            RunError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("{:?}", e),
-            ))
-        })?
-        .ok_or_else(|| RunError::AppNotFound(app_name.to_string()))?;
+    let url = match app_data::get_app(app_name, config) {
+        Ok(app) => match app {
+            Some(a) => a.url,
+            None => {
+                let is_url = utils::is_url(app_name);
+                if is_url {
+                    app_name.to_string()
+                } else {
+                    return Err(RunError::AppNotFound(app_name.to_string()));
+                }
+            }
+        },
+        Err(ProjectDataError::Io(e)) => return Err(RunError::Io(e)),
+        Err(ProjectDataError::JSON(e)) => {
+            return Err(RunError::LaunchFailed(format!(
+                "Failed to parse apps data: {}",
+                e
+            )));
+        }
+    };
 
     let browser_path = match &config.browser_path {
         Some(path) => path.clone(),
@@ -33,7 +46,7 @@ pub fn run(app_name: &str, config: &config::Config) -> Result<(), RunError> {
     };
 
     let error = exec::Command::new(browser_path)
-        .arg(format!("--app={}", app.url))
+        .arg(format!("--app={}", url))
         .exec();
 
     return Err(RunError::LaunchFailed(error.to_string()));

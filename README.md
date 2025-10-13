@@ -51,9 +51,16 @@ tarantula
 Tarantula creates a `.desktop` file for your installed web apps.
 You should be able to run your web apps from your application launcher.
 
-You can also run an app from the command line:
+Run an app from the command line:
+
 ```bash
 tarantula <name>
+```
+
+You can also provide a URL to run a web app without installing it:
+
+```bash
+tarantula <url>
 ```
 
 ### Add an app
