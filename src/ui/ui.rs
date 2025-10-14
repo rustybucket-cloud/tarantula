@@ -1,5 +1,6 @@
 use crate::app::install;
 use crate::app::run;
+use crate::app::uninstall;
 use crate::app::update;
 use crate::app::update::UpdateOptions;
 use crate::domain::app::App;
@@ -18,7 +19,7 @@ pub struct Ui {
 enum ViewState {
     List,
     Install,
-    Update,
+    Update(usize),
 }
 
 #[derive(Clone, Debug)]
@@ -85,7 +86,16 @@ impl Ui {
                     };
                 }
             }
-            Message::UninstallApp(_index) => {}
+            Message::UninstallApp(index) => {
+                let app = &self.apps.get(index).unwrap();
+                uninstall::uninstall(&app.name, &self.config).unwrap();
+                self.apps = self
+                    .apps
+                    .iter()
+                    .filter(|a| a.name != app.name)
+                    .cloned()
+                    .collect();
+            }
             Message::NameChanged(name) => {
                 self.form_state.name = name;
             }

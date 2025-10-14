@@ -2,6 +2,7 @@ use crate::app::config::Config;
 use crate::infra::app_data;
 use crate::infra::desktop_data::remove_entry;
 
+#[derive(Debug)]
 pub enum UninstallError {
     AppNotFound,
     Io(std::io::Error),
