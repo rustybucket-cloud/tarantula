@@ -1,5 +1,5 @@
 use crate::infra::app_data;
-use iced::widget::{Button, Column, Container, Row, Text, TextInput};
+use iced::widget::{button, Button, Column, Container, Row, Text, TextInput};
 use iced::{Alignment, Length};
 
 pub struct Ui {
@@ -57,7 +57,51 @@ impl Ui {
     }
 
     pub fn update(&mut self, message: Message) {
-        todo!("Implementation pending")
+        match message {
+            Message::OpenApp(_index) => {
+            }
+            Message::ShowAddForm => {
+                self.view_state = ViewState::Add;
+                self.form_state = FormState {
+                    name: String::new(),
+                    url: String::new(),
+                    icon: String::new(),
+                };
+            }
+            Message::ShowEditForm(index) => {
+                if let Some(app) = self.apps.get(index) {
+                    self.view_state = ViewState::Edit(index);
+                    self.form_state = FormState {
+                        name: app.name.clone(),
+                        url: app.url.clone(),
+                        icon: app.icon.clone().unwrap_or_default(),
+                    };
+                }
+            }
+            Message::DeleteApp(_index) => {
+            }
+            Message::NameChanged(name) => {
+                self.form_state.name = name;
+            }
+            Message::UrlChanged(url) => {
+                self.form_state.url = url;
+            }
+            Message::IconChanged(icon) => {
+                self.form_state.icon = icon;
+            }
+            Message::SaveAdd => {
+                self.view_state = ViewState::List;
+            }
+            Message::SaveEdit => {
+                self.view_state = ViewState::List;
+            }
+            Message::CancelForm => {
+                self.view_state = ViewState::List;
+            }
+            Message::BackToList => {
+                self.view_state = ViewState::List;
+            }
+        }
     }
 
     pub fn view(&self) -> Column<'_, Message> {
@@ -78,6 +122,7 @@ impl Ui {
                 Row::new()
                     .push(Text::new(&app.name).size(18))
                     .push(iced::widget::horizontal_space())
+                    .push(Button::new(Text::new("Edit")).on_press(Message::ShowEditForm(index)))
                     .push(Button::new(Text::new("Open")).on_press(Message::OpenApp(index)))
                     .spacing(10)
                     .align_y(Alignment::Center)
@@ -109,6 +154,35 @@ impl Ui {
     }
 
     fn view_edit_form(&self, index: usize) -> Column<'_, Message> {
-        todo!("Implementation pending")
+        let app = &self.apps[index];
+        
+        Column::new()
+            .push(Text::new("Edit Application").size(24))
+            .push(Text::new("Name:"))
+            .push(
+                TextInput::new("App name", &self.form_state.name)
+                    .on_input(Message::NameChanged)
+                    .padding(10)
+            )
+            .push(Text::new("URL:"))
+            .push(
+                TextInput::new("App URL", &self.form_state.url)
+                    .on_input(Message::UrlChanged)
+                    .padding(10)
+            )
+            .push(Text::new("Icon:"))
+            .push(
+                TextInput::new("Icon path", &self.form_state.icon)
+                    .on_input(Message::IconChanged)
+                    .padding(10)
+            )
+            .push(
+                Row::new()
+                    .push(Button::new(Text::new("Save")).on_press(Message::SaveEdit))
+                    .push(Button::new(Text::new("Cancel")).on_press(Message::BackToList))
+                    .spacing(10)
+            )
+            .spacing(15)
+            .padding(20)
     }
 }
