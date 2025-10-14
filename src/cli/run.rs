@@ -1,11 +1,14 @@
 use dirs;
 
+use iced;
+
 use crate::app::config;
 use crate::app::install;
 use crate::app::run;
 use crate::app::uninstall;
 use crate::app::update;
 use crate::infra::app_data;
+use crate::ui::ui::Ui;
 use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -136,21 +139,25 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         None => {
             if cli.run_cmd.is_empty() {
-                eprintln!("No command provided. Use --help for more information.");
-                return Ok(());
-            }
-
-            let name = &cli.run_cmd[0];
-            match run::run(name.as_str(), &config) {
-                Ok(_) => println!("App launched!"),
-                Err(run::RunError::AppNotFound(name)) => {
-                    eprint!("App not found: {}", name);
+                match iced::application("Tarantula", Ui::update, Ui::view)
+                    .run_with(move || (Ui::new(config.clone()), iced::Task::none()))
+                {
+                    Ok(_) => println!("Success!"),
+                    Err(e) => eprintln!("{:?}", e),
                 }
-                Err(run::RunError::LaunchFailed(reason)) => {
-                    eprint!("Failed to launch app: {}", reason);
-                }
-                Err(run::RunError::Io(e)) => {
-                    eprint!("Error launching app: {}", e);
+            } else {
+                let name = &cli.run_cmd[0];
+                match run::run(name.as_str(), &config) {
+                    Ok(_) => println!("App launched!"),
+                    Err(run::RunError::AppNotFound(name)) => {
+                        eprint!("App not found: {}", name);
+                    }
+                    Err(run::RunError::LaunchFailed(reason)) => {
+                        eprint!("Failed to launch app: {}", reason);
+                    }
+                    Err(run::RunError::Io(e)) => {
+                        eprint!("Error launching app: {}", e);
+                    }
                 }
             }
         }
