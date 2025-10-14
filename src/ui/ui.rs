@@ -1,5 +1,10 @@
+use crate::app::install;
+use crate::app::run;
+use crate::app::update;
+use crate::app::update::UpdateOptions;
+use crate::domain::app::App;
 use crate::infra::app_data;
-use iced::widget::{button, Button, Column, Container, Row, Text, TextInput};
+use iced::widget::{Button, Column, Container, Row, Text, TextInput, button};
 use iced::{Alignment, Length};
 
 pub struct Ui {
@@ -58,7 +63,9 @@ impl Ui {
 
     pub fn update(&mut self, message: Message) {
         match message {
-            Message::OpenApp(_index) => {
+            Message::OpenApp(index) => {
+                let app = self.apps.get(index).unwrap();
+                run::run(&app.name, &self.config).unwrap();
             }
             Message::ShowAddForm => {
                 self.view_state = ViewState::Add;
@@ -78,8 +85,7 @@ impl Ui {
                     };
                 }
             }
-            Message::DeleteApp(_index) => {
-            }
+            Message::DeleteApp(_index) => {}
             Message::NameChanged(name) => {
                 self.form_state.name = name;
             }
@@ -90,9 +96,32 @@ impl Ui {
                 self.form_state.icon = icon;
             }
             Message::SaveAdd => {
+                install::install(&self.form_state.name, &self.form_state.url, &self.config)
+                    .unwrap();
+                self.apps.push(App {
+                    name: self.form_state.name.clone(),
+                    url: self.form_state.url.clone(),
+                    icon: None,
+                });
                 self.view_state = ViewState::List;
             }
             Message::SaveEdit => {
+                let app_name = match &self.view_state {
+                    ViewState::Edit(index) => self.apps.get(*index).unwrap().name.clone(),
+                    _ => panic!("Invalid view state in edit save"),
+                };
+                let update_options = UpdateOptions {
+                    name: Some(self.form_state.name.clone()),
+                    url: Some(self.form_state.url.clone()),
+                };
+
+                update::update(&app_name, &update_options, &self.config).unwrap();
+                for app in &mut self.apps {
+                    if app.name == app_name {
+                        app.name = self.form_state.name.clone();
+                        app.url = self.form_state.url.clone();
+                    }
+                }
                 self.view_state = ViewState::List;
             }
             Message::CancelForm => {
@@ -113,9 +142,7 @@ impl Ui {
     }
 
     fn view_list(&self) -> Column<'_, Message> {
-        let mut app_widgets = Column::new()
-            .spacing(10)
-            .padding(20);
+        let mut app_widgets = Column::new().spacing(10).padding(20);
 
         for (index, app) in self.apps.iter().enumerate() {
             let app_row = Container::new(
@@ -125,12 +152,14 @@ impl Ui {
                     .push(Button::new(Text::new("Edit")).on_press(Message::ShowEditForm(index)))
                     .push(Button::new(Text::new("Open")).on_press(Message::OpenApp(index)))
                     .spacing(10)
-                    .align_y(Alignment::Center)
+                    .align_y(Alignment::Center),
             )
             .padding(15)
             .width(Length::Fill)
             .style(|_theme| iced::widget::container::Style {
-                background: Some(iced::Background::Color(iced::Color::from_rgb(0.95, 0.95, 0.95))),
+                background: Some(iced::Background::Color(iced::Color::from_rgb(
+                    0.95, 0.95, 0.95,
+                ))),
                 border: iced::Border {
                     color: iced::Color::from_rgb(0.85, 0.85, 0.85),
                     width: 1.0,
@@ -148,7 +177,7 @@ impl Ui {
                     .push(Text::new("Applications").size(24))
                     .push(iced::widget::horizontal_space())
                     .push(Button::new(Text::new("+ Add App")).on_press(Message::ShowAddForm))
-                    .align_y(Alignment::Center)
+                    .align_y(Alignment::Center),
             )
             .push(app_widgets)
             .spacing(20)
@@ -162,25 +191,25 @@ impl Ui {
             .push(
                 TextInput::new("App name", &self.form_state.name)
                     .on_input(Message::NameChanged)
-                    .padding(10)
+                    .padding(10),
             )
             .push(Text::new("URL:"))
             .push(
                 TextInput::new("App URL", &self.form_state.url)
                     .on_input(Message::UrlChanged)
-                    .padding(10)
+                    .padding(10),
             )
             .push(Text::new("Icon:"))
             .push(
                 TextInput::new("Icon path", &self.form_state.icon)
                     .on_input(Message::IconChanged)
-                    .padding(10)
+                    .padding(10),
             )
             .push(
                 Row::new()
                     .push(Button::new(Text::new("Create")).on_press(Message::SaveAdd))
                     .push(Button::new(Text::new("Cancel")).on_press(Message::BackToList))
-                    .spacing(10)
+                    .spacing(10),
             )
             .spacing(15)
             .padding(20)
@@ -188,32 +217,32 @@ impl Ui {
 
     fn view_edit_form(&self, index: usize) -> Column<'_, Message> {
         let app = &self.apps[index];
-        
+
         Column::new()
             .push(Text::new("Edit Application").size(24))
             .push(Text::new("Name:"))
             .push(
                 TextInput::new("App name", &self.form_state.name)
                     .on_input(Message::NameChanged)
-                    .padding(10)
+                    .padding(10),
             )
             .push(Text::new("URL:"))
             .push(
                 TextInput::new("App URL", &self.form_state.url)
                     .on_input(Message::UrlChanged)
-                    .padding(10)
+                    .padding(10),
             )
             .push(Text::new("Icon:"))
             .push(
                 TextInput::new("Icon path", &self.form_state.icon)
                     .on_input(Message::IconChanged)
-                    .padding(10)
+                    .padding(10),
             )
             .push(
                 Row::new()
                     .push(Button::new(Text::new("Save")).on_press(Message::SaveEdit))
                     .push(Button::new(Text::new("Cancel")).on_press(Message::BackToList))
-                    .spacing(10)
+                    .spacing(10),
             )
             .spacing(15)
             .padding(20)

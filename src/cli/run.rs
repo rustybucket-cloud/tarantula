@@ -104,8 +104,8 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(Commands::Update(args)) => {
             let options = update::UpdateOptions {
-                name: args.new_url.clone(),
-                new_name: args.new_name.clone(),
+                name: args.new_name.clone(),
+                url: args.new_url.clone(),
             };
             match update::update(args.name.as_str(), &options, &config) {
                 Ok(_) => println!("App updated!"),

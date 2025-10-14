@@ -4,9 +4,10 @@ use crate::infra::desktop_data;
 
 pub struct UpdateOptions {
     pub name: Option<String>,
-    pub new_name: Option<String>,
+    pub url: Option<String>,
 }
 
+#[derive(Debug)]
 pub enum UpdateError {
     AppNotFound,
     Io(std::io::Error),
@@ -29,11 +30,11 @@ pub fn update(
         None => return Err(UpdateError::AppNotFound),
     };
 
-    if let Some(name) = options.new_name.as_ref() {
+    if let Some(name) = options.name.as_ref() {
         app.name = name.clone();
     }
 
-    if let Some(url) = options.name.as_ref() {
+    if let Some(url) = options.url.as_ref() {
         app.url = url.clone();
     }
 

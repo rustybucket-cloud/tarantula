@@ -5,6 +5,7 @@ use crate::infra::app_data::{self, ProjectDataError};
 use crate::utils;
 use exec;
 
+#[derive(Debug)]
 pub enum RunError {
     AppNotFound(String),
     LaunchFailed(String),
