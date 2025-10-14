@@ -16,7 +16,8 @@ pub fn create_entry(app: &App, config: &Config) -> Result<(), DesktopDataError> 
 
     let mut content = format!(
         "[Desktop Entry]\nName={}\nExec=tarantula {}\nType=Application\n",
-        app.name, app.name
+        app.name,
+        app.name.to_lowercase().replace(" ", "_")
     );
     if app.icon.is_some() {
         content.push_str(&format!("Icon={}\n", app.icon.as_ref().unwrap()));
@@ -60,7 +61,7 @@ mod tests {
         assert!(path.exists());
 
         let file = std::fs::read_to_string(path).unwrap();
-        let expected_content = "[Desktop Entry]\nName=Test App\nExec=tarantula Test App\nType=Application\nIcon=test_icon\n";
+        let expected_content = "[Desktop Entry]\nName=Test App\nExec=tarantula test_app\nType=Application\nIcon=test_icon\n";
         assert_eq!(file, expected_content);
     }
 }

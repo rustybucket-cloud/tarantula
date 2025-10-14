@@ -26,9 +26,9 @@ pub fn get_app(
 ) -> Result<Option<app::App>, ProjectDataError> {
     let apps = get_apps(config)?;
 
-    Ok(apps
-        .into_iter()
-        .find(|a| a.name.to_lowercase() == app_name.to_lowercase()))
+    Ok(apps.into_iter().find(|a| {
+        a.name.to_lowercase().replace(" ", "_") == app_name.to_lowercase().replace(" ", "_")
+    }))
 }
 
 pub fn get_apps(config: &config::Config) -> Result<Vec<app::App>, ProjectDataError> {
