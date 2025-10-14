@@ -143,14 +143,47 @@ impl Ui {
         }
 
         Column::new()
-            .push(Text::new("Applications").size(24))
+            .push(
+                Row::new()
+                    .push(Text::new("Applications").size(24))
+                    .push(iced::widget::horizontal_space())
+                    .push(Button::new(Text::new("+ Add App")).on_press(Message::ShowAddForm))
+                    .align_y(Alignment::Center)
+            )
             .push(app_widgets)
             .spacing(20)
             .padding(20)
     }
 
     fn view_add_form(&self) -> Column<'_, Message> {
-        todo!("Implementation pending")
+        Column::new()
+            .push(Text::new("Add New Application").size(24))
+            .push(Text::new("Name:"))
+            .push(
+                TextInput::new("App name", &self.form_state.name)
+                    .on_input(Message::NameChanged)
+                    .padding(10)
+            )
+            .push(Text::new("URL:"))
+            .push(
+                TextInput::new("App URL", &self.form_state.url)
+                    .on_input(Message::UrlChanged)
+                    .padding(10)
+            )
+            .push(Text::new("Icon:"))
+            .push(
+                TextInput::new("Icon path", &self.form_state.icon)
+                    .on_input(Message::IconChanged)
+                    .padding(10)
+            )
+            .push(
+                Row::new()
+                    .push(Button::new(Text::new("Create")).on_press(Message::SaveAdd))
+                    .push(Button::new(Text::new("Cancel")).on_press(Message::BackToList))
+                    .spacing(10)
+            )
+            .spacing(15)
+            .padding(20)
     }
 
     fn view_edit_form(&self, index: usize) -> Column<'_, Message> {
