@@ -40,7 +40,7 @@ cp target/release/tarantula /usr/local/bin/
 
 ## Usage
 
-Open tarantula UI (Coming Soon):
+Open tarantula UI:
 
 ```bash
 tarantula
