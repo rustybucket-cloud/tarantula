@@ -4,7 +4,7 @@ use crate::app::update;
 use crate::app::update::UpdateOptions;
 use crate::domain::app::App;
 use crate::infra::app_data;
-use iced::widget::{Button, Column, Container, Row, Text, TextInput, button};
+use iced::widget::{Button, Column, Container, Row, Text, TextInput};
 use iced::{Alignment, Length};
 
 pub struct Ui {
@@ -17,8 +17,8 @@ pub struct Ui {
 #[derive(Clone, Debug)]
 enum ViewState {
     List,
-    Add,
-    Edit(usize),
+    Install,
+    Update,
 }
 
 #[derive(Clone, Debug)]
@@ -31,16 +31,16 @@ struct FormState {
 #[derive(Clone, Debug)]
 pub enum Message {
     OpenApp(usize),
-    ShowAddForm,
-    ShowEditForm(usize),
-    DeleteApp(usize),
+    ShowInstallForm,
+    ShowUpdateForm(usize),
+    UninstallApp(usize),
 
     NameChanged(String),
     UrlChanged(String),
     IconChanged(String),
 
-    SaveAdd,
-    SaveEdit,
+    SaveInstall,
+    SaveUpdate,
     CancelForm,
 
     BackToList,
@@ -67,17 +67,17 @@ impl Ui {
                 let app = self.apps.get(index).unwrap();
                 run::run(&app.name, &self.config).unwrap();
             }
-            Message::ShowAddForm => {
-                self.view_state = ViewState::Add;
+            Message::ShowInstallForm => {
+                self.view_state = ViewState::Install;
                 self.form_state = FormState {
                     name: String::new(),
                     url: String::new(),
                     icon: String::new(),
                 };
             }
-            Message::ShowEditForm(index) => {
+            Message::ShowUpdateForm(index) => {
                 if let Some(app) = self.apps.get(index) {
-                    self.view_state = ViewState::Edit(index);
+                    self.view_state = ViewState::Update(index);
                     self.form_state = FormState {
                         name: app.name.clone(),
                         url: app.url.clone(),
@@ -85,7 +85,7 @@ impl Ui {
                     };
                 }
             }
-            Message::DeleteApp(_index) => {}
+            Message::UninstallApp(_index) => {}
             Message::NameChanged(name) => {
                 self.form_state.name = name;
             }
@@ -95,7 +95,7 @@ impl Ui {
             Message::IconChanged(icon) => {
                 self.form_state.icon = icon;
             }
-            Message::SaveAdd => {
+            Message::SaveInstall => {
                 install::install(&self.form_state.name, &self.form_state.url, &self.config)
                     .unwrap();
                 self.apps.push(App {
@@ -105,9 +105,9 @@ impl Ui {
                 });
                 self.view_state = ViewState::List;
             }
-            Message::SaveEdit => {
+            Message::SaveUpdate => {
                 let app_name = match &self.view_state {
-                    ViewState::Edit(index) => self.apps.get(*index).unwrap().name.clone(),
+                    ViewState::Update(index) => self.apps.get(*index).unwrap().name.clone(),
                     _ => panic!("Invalid view state in edit save"),
                 };
                 let update_options = UpdateOptions {
@@ -136,8 +136,8 @@ impl Ui {
     pub fn view(&self) -> Column<'_, Message> {
         match self.view_state {
             ViewState::List => self.view_list(),
-            ViewState::Add => self.view_add_form(),
-            ViewState::Edit(index) => self.view_edit_form(index),
+            ViewState::Install => self.view_add_form(),
+            ViewState::Update(index) => self.view_edit_form(),
         }
     }
 
@@ -149,7 +149,10 @@ impl Ui {
                 Row::new()
                     .push(Text::new(&app.name).size(18))
                     .push(iced::widget::horizontal_space())
-                    .push(Button::new(Text::new("Edit")).on_press(Message::ShowEditForm(index)))
+                    .push(Button::new(Text::new("Update")).on_press(Message::ShowUpdateForm(index)))
+                    .push(
+                        Button::new(Text::new("Uninstall")).on_press(Message::UninstallApp(index)),
+                    )
                     .push(Button::new(Text::new("Open")).on_press(Message::OpenApp(index)))
                     .spacing(10)
                     .align_y(Alignment::Center),
@@ -176,7 +179,9 @@ impl Ui {
                 Row::new()
                     .push(Text::new("Applications").size(24))
                     .push(iced::widget::horizontal_space())
-                    .push(Button::new(Text::new("+ Add App")).on_press(Message::ShowAddForm))
+                    .push(
+                        Button::new(Text::new("+ Install App")).on_press(Message::ShowInstallForm),
+                    )
                     .align_y(Alignment::Center),
             )
             .push(app_widgets)
@@ -186,7 +191,7 @@ impl Ui {
 
     fn view_add_form(&self) -> Column<'_, Message> {
         Column::new()
-            .push(Text::new("Add New Application").size(24))
+            .push(Text::new("Install New Application").size(24))
             .push(Text::new("Name:"))
             .push(
                 TextInput::new("App name", &self.form_state.name)
@@ -207,7 +212,7 @@ impl Ui {
             )
             .push(
                 Row::new()
-                    .push(Button::new(Text::new("Create")).on_press(Message::SaveAdd))
+                    .push(Button::new(Text::new("Install")).on_press(Message::SaveInstall))
                     .push(Button::new(Text::new("Cancel")).on_press(Message::BackToList))
                     .spacing(10),
             )
@@ -215,11 +220,9 @@ impl Ui {
             .padding(20)
     }
 
-    fn view_edit_form(&self, index: usize) -> Column<'_, Message> {
-        let app = &self.apps[index];
-
+    fn view_edit_form(&self) -> Column<'_, Message> {
         Column::new()
-            .push(Text::new("Edit Application").size(24))
+            .push(Text::new("Update Application").size(24))
             .push(Text::new("Name:"))
             .push(
                 TextInput::new("App name", &self.form_state.name)
@@ -240,7 +243,7 @@ impl Ui {
             )
             .push(
                 Row::new()
-                    .push(Button::new(Text::new("Save")).on_press(Message::SaveEdit))
+                    .push(Button::new(Text::new("Save")).on_press(Message::SaveUpdate))
                     .push(Button::new(Text::new("Cancel")).on_press(Message::BackToList))
                     .spacing(10),
             )
