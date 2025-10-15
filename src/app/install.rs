@@ -2,6 +2,7 @@ use crate::app::config::Config;
 use crate::domain::app::App;
 use crate::infra::app_data;
 use crate::infra::desktop_data;
+use crate::infra::icons;
 
 #[derive(Debug)]
 pub enum InstallError {
@@ -18,11 +19,19 @@ pub fn install(name: &str, url: &str, config: &Config) -> Result<(), InstallErro
         ));
     }
 
-    let app = App {
+    let mut app = App {
         name: name.to_string(),
         url: url.to_string(),
         icon: None,
     };
+
+    match icons::store_icon(&app, &config) {
+        Ok(icon_url) => match icon_url {
+            Some(u) => app.icon = Some(u),
+            None => {}
+        },
+        Err(e) => eprintln!("{:?}", e),
+    }
 
     app_data::add_app(app.clone(), config).map_err(|e| InstallError::AppData(e))?;
     desktop_data::create_entry(&app, config).map_err(|e| InstallError::Desktop(e))?;
