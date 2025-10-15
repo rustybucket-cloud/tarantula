@@ -147,7 +147,7 @@ impl Ui {
         match self.view_state {
             ViewState::List => self.view_list(),
             ViewState::Install => self.view_add_form(),
-            ViewState::Update(index) => self.view_edit_form(),
+            ViewState::Update(_index) => self.view_edit_form(),
         }
     }
 

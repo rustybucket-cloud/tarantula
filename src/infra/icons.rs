@@ -84,7 +84,7 @@ mod test {
             icon: None,
         };
 
-        let icon_path = store_icon(&app, &config).unwrap();
+        let icon_path = store_icon(&app, &config).unwrap().unwrap();
         assert_eq!(
             &icon_path,
             &format!("{}/perplexity.ico", config.app_data_path.to_str().unwrap())
