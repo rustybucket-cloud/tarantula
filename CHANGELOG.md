@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2025-10-15
+
+### Added
+
+- Auto-fetches app icons when installing
+
 ## [0.5.1] - 2025-10-14
 
 ### Fixed
