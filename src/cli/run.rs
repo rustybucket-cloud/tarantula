@@ -97,7 +97,6 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(Commands::List) => {
             let apps = app_data::get_apps(&config).unwrap_or_else(|_| vec![]);
-            println!("Installed web apps:");
             for app in apps {
                 println!("{} - {}", app.name, app.url);
             }
@@ -116,7 +115,6 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                     eprint!("Error updating app: {}", e);
                 }
             }
-            println!("Update");
         }
         Some(Commands::Config(args)) => {
             if let Some(val) = &args.browser_path {
