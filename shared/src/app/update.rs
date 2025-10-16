@@ -2,6 +2,7 @@ use crate::app::config;
 use crate::infra::app_data;
 use crate::infra::desktop_data;
 
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct UpdateOptions {
     pub name: Option<String>,
     pub url: Option<String>,

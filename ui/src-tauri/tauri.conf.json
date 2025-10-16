@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ui",
+  "productName": "Tarantula",
   "version": "0.1.0",
   "identifier": "com.tarantula.ui",
   "build": {
@@ -12,13 +12,20 @@
   "app": {
     "windows": [
       {
-        "title": "ui",
+        "title": "Tarantula",
         "width": 800,
         "height": 600
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPDATA/**",
+          "$HOME/.local/share/tarantula/**"
+        ]
+      }
     }
   },
   "bundle": {

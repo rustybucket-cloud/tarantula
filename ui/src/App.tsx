@@ -1,9 +1,13 @@
 import React from "react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription, CardAction } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import "./App.css";
 import { invoke } from "@tauri-apps/api/core";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Plus, Pencil, Trash2 } from "lucide-react";
+import { convertFileSrc } from "@tauri-apps/api/core";
 
 type AppType = {
     name: string;
@@ -13,6 +17,12 @@ type AppType = {
 
 function App() {
     const [apps, setApps] = React.useState<AppType[]>([]);
+    const [imageSrcs, setImageSrc] = React.useState<{[key: string]: string}>({})
+    const [createOpen, setCreateOpen] = React.useState(false);
+    const [editOpen, setEditOpen] = React.useState(false);
+    const [deleteOpen, setDeleteOpen] = React.useState(false);
+    const [selectedApp, setSelectedApp] = React.useState<AppType | null>(null);
+    const [formData, setFormData] = React.useState({ name: "", url: "", icon: "" });
 
     React.useEffect(() => {
         invoke("get_app_data").then((data) => {
@@ -23,39 +33,218 @@ function App() {
         });
     }, [])
 
+    React.useEffect(() => {
+        const sources = apps.reduce((prev, app) => {
+            if (!app.icon) return prev;
+            const src = convertFileSrc(app.icon);
+            return { ...prev, [app.name]: src };
+        }, {})
+
+        setImageSrc(sources);
+    }, [apps])
+
     const handleClick = (app: AppType) => {
         invoke("run_app", { appName: app.name }).catch((err) => {
             console.error(err);
         });
     }
 
+    const handleCreateOpen = () => {
+        setFormData({ name: "", url: "", icon: "" });
+        setCreateOpen(true);
+    };
+
+    const handleEditOpen = (app: AppType) => {
+        setSelectedApp(app);
+        setFormData({ name: app.name, url: app.url, icon: app.icon || "" });
+        setEditOpen(true);
+    };
+
+    const handleDeleteOpen = (app: AppType) => {
+        setSelectedApp(app);
+        setDeleteOpen(true);
+    };
+
+    const handleCreate = () => {
+        console.log("Create app:", formData);
+        setCreateOpen(false);
+    };
+
+    const handleEdit = () => {
+        console.log("Edit app:", formData);
+        setEditOpen(false);
+    };
+
+    const handleDelete = () => {
+        console.log("Delete app:", selectedApp?.name);
+        setDeleteOpen(false);
+    };
+
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-      <ul>
-        {apps.map((app, index) => (
-            <li key={index}>
-                <Card>
+      <div className="py-3 px-4 flex flex-col h-screen">
+        <div className="flex justify-between items-center flex-grow max-w-7xl mx-auto w-full">
+          <h1 className="text-4xl font-bold">Tarantula</h1>
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleCreateOpen} size="lg">
+                <Plus className="mr-2 h-5 w-5" />
+                Add App
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New App</DialogTitle>
+                <DialogDescription>
+                  Add a new application to your collection.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="create-name">Name</Label>
+                  <Input
+                    id="create-name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="App name"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="create-url">URL</Label>
+                  <Input
+                    id="create-url"
+                    value={formData.url}
+                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="create-icon">Icon URL (optional)</Label>
+                  <Input
+                    id="create-icon"
+                    value={formData.icon}
+                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                    placeholder="https://example.com/icon.png"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCreateOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreate}>Create</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="flex-grow overflow-y-auto pt-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+              {apps.map((app, index) => (
+                <Card key={index} className="hover:shadow-lg transition-shadow" onClick={() => handleEditOpen(app)}>
                   <CardHeader>
-                    <CardTitle>{app.name}</CardTitle>
-                    <CardDescription>{app.url}</CardDescription>
-                    <CardAction>
-                      <Button onClick={() => handleClick(app)}><ExternalLink /></Button>
-                    </CardAction>
+                    <div className="flex items-start gap-4">
+                      {app.icon && (
+                        <img 
+                          src={imageSrcs[app.name]} 
+                          alt={`${app.name} icon`} 
+                          className="w-12 h-12 rounded-lg object-cover"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <CardTitle className="mb-2">{app.name}</CardTitle>
+                        <CardDescription className="break-all">{app.url}</CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <p>Card Content</p>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handleClick(app)} 
+                        className="flex-1"
+                        size="sm"
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Launch
+                      </Button>
+                      <Button 
+                        onClick={() => handleDeleteOpen(app)} 
+                        variant="destructive"
+                        size="sm"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
-                  <CardFooter>
-                    <p>Card Footer</p>
-                  </CardFooter>
                 </Card>
-                {app.icon && <img src={app.icon} alt={`${app.name} icon`} width={32} height={32} />}
-                <a href={app.url} target="_blank" rel="noopener noreferrer">{app.name}</a>
-            </li>
-        ))}
-    </ul>
-    </main>
+              ))}
+            </div>
+        </div>
+
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit App</DialogTitle>
+              <DialogDescription>
+                Update the application details.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="App name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-url">URL</Label>
+                <Input
+                  id="edit-url"
+                  value={formData.url}
+                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  placeholder="https://example.com"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-icon">Icon URL (optional)</Label>
+                <Input
+                  id="edit-icon"
+                  value={formData.icon}
+                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                  placeholder="https://example.com/icon.png"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEdit}>Save Changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete App</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{selectedApp?.name}"? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDelete}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
   );
 }
 
