@@ -1,15 +1,12 @@
 use dirs;
 
-use iced;
-
-use crate::app::config;
-use crate::app::install;
-use crate::app::run;
-use crate::app::uninstall;
-use crate::app::update;
-use crate::infra::app_data;
-use crate::ui::ui::Ui;
 use clap::{Args, Parser, Subcommand};
+use shared::app::config;
+use shared::app::install;
+use shared::app::run;
+use shared::app::uninstall;
+use shared::app::update;
+use shared::infra::app_data;
 
 #[derive(Parser, Debug)]
 #[command(name = "tarantula", version, about = "Use web apps like desktop apps")]
@@ -60,14 +57,10 @@ struct ConfigArgs {
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
-    let app_data_path = home_dir.join(".local/share/tarantula").to_path_buf();
-    let desktop_data_path = home_dir.join(".local/share/applications").to_path_buf();
-    let mut config = config::Config::new(app_data_path, desktop_data_path);
-    config.browser_path = match config::get_browser_path(&config) {
-        Ok(path) => path,
+    let mut config = match config::create_config() {
+        Ok(cfg) => cfg,
         Err(e) => {
-            eprintln!("Error retrieving browser path from config: {:?}", e);
+            eprintln!("Error creating config: {:?}", e);
             std::process::exit(1);
         }
     };
@@ -123,9 +116,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
                     return Ok(());
                 }
 
-                match crate::app::config::update_browser_path(val, &mut config) {
+                match shared::app::config::update_browser_path(val, &mut config) {
                     Ok(_) => println!("Browser path updated!"),
-                    Err(crate::app::config::ConfigError::InvalidPath(msg)) => {
+                    Err(shared::app::config::ConfigError::InvalidPath(msg)) => {
                         eprint!("Invalid path: {}", msg);
                     }
                     Err(e) => {
@@ -137,12 +130,10 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         None => {
             if cli.run_cmd.is_empty() {
-                match iced::application("Tarantula", Ui::update, Ui::view)
-                    .run_with(move || (Ui::new(config.clone()), iced::Task::none()))
-                {
-                    Ok(_) => println!("Success!"),
-                    Err(e) => eprintln!("{:?}", e),
-                }
+                println!("Run ui");
+                std::process::Command::new("../ui/src-tauri/target/release/ui")
+                    .spawn()
+                    .expect("Failed to launch UI");
             } else {
                 let name = &cli.run_cmd[0];
                 match run::run(name.as_str(), &config) {

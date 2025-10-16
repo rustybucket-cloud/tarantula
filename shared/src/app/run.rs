@@ -1,9 +1,9 @@
 use std::path::Path;
+use std::process::Command;
 
 use crate::app::config;
 use crate::infra::app_data::{self, ProjectDataError};
 use crate::utils;
-use exec;
 
 #[derive(Debug)]
 pub enum RunError {
@@ -46,11 +46,13 @@ pub fn run(app_name: &str, config: &config::Config) -> Result<(), RunError> {
         },
     };
 
-    let error = exec::Command::new(browser_path)
+    match Command::new(browser_path)
         .arg(format!("--app={}", url))
-        .exec();
-
-    return Err(RunError::LaunchFailed(error.to_string()));
+        .spawn()
+    {
+        Ok(_) => Ok(()),
+        Err(e) => Err(RunError::LaunchFailed(e.to_string())),
+    }
 }
 
 fn get_browser_path() -> Option<String> {

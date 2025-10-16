@@ -28,6 +28,29 @@ pub enum ConfigError {
     Io(std::io::Error),
 }
 
+pub fn create_config() -> Result<Config, ConfigError> {
+    let home_dir = dirs::home_dir()
+        .ok_or("Could not find home directory")
+        .map_err(|e| {
+            ConfigError::Io(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                e.to_string(),
+            ))
+        })?;
+    let app_data_path = home_dir.join(".local/share/tarantula").to_path_buf();
+    let desktop_data_path = home_dir.join(".local/share/applications").to_path_buf();
+    let mut config = Config::new(app_data_path, desktop_data_path);
+    config.browser_path = match get_browser_path(&config) {
+        Ok(path) => path,
+        Err(e) => {
+            eprintln!("Error retrieving browser path from config: {:?}", e);
+            std::process::exit(1);
+        }
+    };
+
+    Ok(config)
+}
+
 pub fn update_browser_path(
     new_path: &str,
     config: &mut crate::app::config::Config,
