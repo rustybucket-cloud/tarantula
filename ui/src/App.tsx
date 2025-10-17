@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import "./App.css";
 import { invoke } from "@tauri-apps/api/core";
-import { ExternalLink, Plus, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Plus, Trash2 } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 
 type AppType = {
@@ -23,6 +23,10 @@ function App() {
     const [deleteOpen, setDeleteOpen] = React.useState(false);
     const [selectedApp, setSelectedApp] = React.useState<AppType | null>(null);
     const [formData, setFormData] = React.useState({ name: "", url: "", icon: "" });
+ 
+    React.useEffect(() => {
+        console.log('formDta changed:', formData);
+    }, [formData])
 
     React.useEffect(() => {
         invoke("get_app_data").then((data) => {
@@ -56,8 +60,8 @@ function App() {
 
     const handleEditOpen = (app: AppType) => {
         setSelectedApp(app);
-        setFormData({ name: app.name, url: app.url, icon: app.icon || "" });
         setEditOpen(true);
+        setFormData({ name: app.name, url: app.url, icon: app.icon || "" });
     };
 
     const handleDeleteOpen = (app: AppType) => {
@@ -115,15 +119,6 @@ function App() {
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                     placeholder="https://example.com"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="create-icon">Icon URL (optional)</Label>
-                  <Input
-                    id="create-icon"
-                    value={formData.icon}
-                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                    placeholder="https://example.com/icon.png"
                   />
                 </div>
               </div>
@@ -208,13 +203,33 @@ function App() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-icon">Icon URL (optional)</Label>
-                <Input
+                <Label htmlFor="edit-icon">Icon (optional)</Label>
+                <input
                   id="edit-icon"
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                  placeholder="https://example.com/icon.png"
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const path = await invoke<string>("get_file_path", { file: file.name });
+                      setFormData({ ...formData, icon: path });
+                    }
+                  }}
+                  className="hidden"
                 />
+                <label htmlFor="edit-icon" className="cursor-pointer">
+                  {formData.icon ? (
+                    <img 
+                      src={imageSrcs[formData.name] || convertFileSrc(formData.icon)} 
+                      alt="App icon" 
+                      className="w-24 h-24 rounded-lg object-cover hover:opacity-80 transition-opacity"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-400 transition-colors">
+                      <Plus className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )}
+                </label>
               </div>
             </div>
             <DialogFooter>
