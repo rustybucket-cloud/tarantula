@@ -1,5 +1,3 @@
-use dirs;
-
 use clap::{Args, Parser, Subcommand};
 use shared::app::config;
 use shared::app::install;
@@ -131,7 +129,33 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         None => {
             if cli.run_cmd.is_empty() {
                 println!("Run ui");
-                std::process::Command::new("../ui/src-tauri/target/release/ui")
+
+                // Get embedded UI binary using relative path from build.rs
+                const UI_BINARY: &[u8] = include_bytes!("../../ui-binary");
+
+                // Create temp file or use a cached location
+                let cache_dir = dirs::cache_dir()
+                    .ok_or("Could not find cache directory")?
+                    .join("tarantula");
+                std::fs::create_dir_all(&cache_dir)?;
+
+                let ui_path = cache_dir.join("ui");
+
+                // Write binary if it doesn't exist or is outdated
+                if !ui_path.exists() || std::fs::metadata(&ui_path)?.len() != UI_BINARY.len() as u64
+                {
+                    std::fs::write(&ui_path, UI_BINARY)?;
+
+                    #[cfg(unix)]
+                    {
+                        use std::os::unix::fs::PermissionsExt;
+                        let mut perms = std::fs::metadata(&ui_path)?.permissions();
+                        perms.set_mode(0o755);
+                        std::fs::set_permissions(&ui_path, perms)?;
+                    }
+                }
+
+                std::process::Command::new(&ui_path)
                     .spawn()
                     .expect("Failed to launch UI");
             } else {
